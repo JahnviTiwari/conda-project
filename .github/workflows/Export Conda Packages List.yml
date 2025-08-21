@@ -1,0 +1,26 @@
+name: Export Conda Packages List
+
+on:
+  workflow_dispatch:
+
+jobs:
+  export-packages:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install yq
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y yq
+
+      - name: Export packages list to file
+        run: |
+          yq e '.package[].name + " " + .package[].version' default.conda-lock.yml > packages.txt
+
+      - name: Upload packages list artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages-list
+          path: packages.txt

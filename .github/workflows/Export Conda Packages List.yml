@@ -7,19 +7,17 @@ jobs:
   export-packages:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install yq
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y yq
+      - name: List files in working directory (debug)
+        run: ls -l
 
       - name: Export packages list to file
         run: |
-          yq e '.package[].name + " " + .package[].version' default.conda-lock.yml > packages.txt
+          yq e '.package[] | .name + " " + .version' default.conda-lock.yml > packages.txt
 
-      - name: Upload packages list artifact
+      - name: Upload packages.txt artifact
         uses: actions/upload-artifact@v4
         with:
           name: packages-list

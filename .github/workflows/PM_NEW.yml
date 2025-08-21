@@ -1,0 +1,37 @@
+name: Export Conda Packages
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  list-packages:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Install yq for YAML processing
+      - name: Install yq
+        run: |
+          sudo wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/local/bin/yq
+          sudo chmod +x /usr/local/bin/yq
+
+      # 3. Export packages list from the specific conda-lock YAML file
+      - name: Export packages list to file
+        run: |
+          if [ -f examples/cmds-and-vars/conda-lock.default.yml ]; then
+            yq e '.package[] | .name + " " + .version' examples/cmds-and-vars/conda-lock.default.yml > packages.txt
+          else
+            echo "conda-lock.default.yml not found!" > packages.txt
+          fi
+
+      # 4. Upload packages.txt as artifact
+      - name: Upload package list
+        uses: actions/upload-artifact@v4
+        with:
+          name: conda-packages
+          path: packages.txt

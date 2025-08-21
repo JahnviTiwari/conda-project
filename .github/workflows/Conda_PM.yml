@@ -1,0 +1,38 @@
+name: SBOM Generation
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Miniconda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          auto-update-conda: true
+
+      - name: Export packages list to text file
+        run: |
+          yq e '.package[].name + " " + .package[].version' default.conda-lock.yml > packages.txt
+        shell: bash
+
+      - name: Generate SBOM
+        run: |
+          curl -Lo $RUNNER_TEMP/sbom-tool https://github.com/microsoft/sbom-tool/releases/latest/download/sbom-tool-linux-x64
+          chmod +x $RUNNER_TEMP/sbom-tool
+          $RUNNER_TEMP/sbom-tool generate -b . -bc . -pn Conda -pv 1.0.0 -ps Philips_test -nsb https://sbom.philips.com -V Verbose
+
+      - name: Upload SBOM Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          path: .
+
+      - name: Upload packages list
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages-list
+          path: packages.txt
